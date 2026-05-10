@@ -239,8 +239,13 @@ async function handleCloseTicket(interaction, channelId) {
   }
 
   // Delete the channel after a short delay so the reply is briefly visible
+  const channelToDelete = interaction.channel;
   setTimeout(async () => {
-    await interaction.channel.delete('Ticket closed').catch(() => null);
+    // Guard: do nothing if the channel was already deleted by another means
+    const stillExists = await channelToDelete.fetch().catch(() => null);
+    if (stillExists) {
+      await channelToDelete.delete('Ticket closed').catch(() => null);
+    }
   }, 3000);
 }
 

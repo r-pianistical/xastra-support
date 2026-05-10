@@ -5,19 +5,32 @@ const path = require('path');
 
 const DATA_FILE = path.join(__dirname, '..', 'data.json');
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+// ── In-memory cache — loaded once at startup ──────────────────────────────────
+
+let _cache = null;
 
 function loadData() {
+  if (_cache) return _cache;
+
   if (!fs.existsSync(DATA_FILE)) {
-    const initial = { panelMessages: {}, tickets: {}, ratings: {} };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
-    return initial;
+    _cache = { panelMessages: {}, tickets: {}, ratings: {} };
+    // Write the initial file synchronously only on first-ever run
+    fs.writeFileSync(DATA_FILE, JSON.stringify(_cache, null, 2));
+    return _cache;
   }
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+
+  _cache = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  return _cache;
 }
 
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+/**
+ * Persists the in-memory cache to disk asynchronously.
+ * Errors are logged but do not throw so bot operation continues.
+ */
+function saveData() {
+  fs.promises
+    .writeFile(DATA_FILE, JSON.stringify(_cache, null, 2))
+    .catch((err) => console.error('[DataManager] Failed to write data.json:', err));
 }
 
 // ── Panel message tracking ────────────────────────────────────────────────────
@@ -31,15 +44,10 @@ function getPanelMessage(guildId) {
   return loadData().panelMessages[guildId] ?? null;
 }
 
-/**
- * Persists the panel message ID for a guild.
- * @param {string} guildId
- * @param {string} messageId
- */
 function setPanelMessage(guildId, messageId) {
   const data = loadData();
   data.panelMessages[guildId] = messageId;
-  saveData(data);
+  saveData();
 }
 
 // ── Ticket tracking ───────────────────────────────────────────────────────────
@@ -60,26 +68,18 @@ function createTicket(channelId, userId, guildId, categoryId) {
     rated: false,
     openedAt: new Date().toISOString(),
   };
-  saveData(data);
+  saveData();
 }
 
-/**
- * Returns the ticket record for a channel, or null.
- * @param {string} channelId
- */
 function getTicket(channelId) {
   return loadData().tickets[channelId] ?? null;
 }
 
-/**
- * Marks a ticket as closed (records timestamp, does not delete the record).
- * @param {string} channelId
- */
 function closeTicket(channelId) {
   const data = loadData();
   if (data.tickets[channelId]) {
     data.tickets[channelId].closedAt = new Date().toISOString();
-    saveData(data);
+    saveData();
   }
 }
 
@@ -93,17 +93,12 @@ function isTicketRated(channelId) {
   return loadData().tickets[channelId]?.rated === true;
 }
 
-/**
- * Records the star rating for a ticket and marks it as rated.
- * @param {string} channelId
- * @param {number} stars  1–5
- */
 function markTicketRated(channelId, stars) {
   const data = loadData();
   if (data.tickets[channelId]) {
     data.tickets[channelId].rated = true;
     data.ratings[channelId] = { stars, ratedAt: new Date().toISOString() };
-    saveData(data);
+    saveData();
   }
 }
 
