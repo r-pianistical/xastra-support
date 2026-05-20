@@ -52,7 +52,7 @@ module.exports = {
         const stars = parseInt(rest.slice(lastSep + 1), 10); // 1–5
 
         if (!ticketChannelId || isNaN(stars) || stars < 1 || stars > 5) {
-          return interaction.reply({ content: '❌ Invalid rating.', ephemeral: true });
+          return interaction.reply({ content: '❌ Invalid rating.', flags: ['Ephemeral'] });
         }
 
         return handleRatingSubmit(interaction, ticketChannelId, stars);

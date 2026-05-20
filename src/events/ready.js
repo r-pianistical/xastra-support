@@ -4,7 +4,7 @@ const config = require('../config');
 const { deployPanel } = require('../handlers/panelHandler');
 
 module.exports = {
-  name: 'ready',
+  name: 'clientReady',
   once: true,
 
   async execute(client) {
