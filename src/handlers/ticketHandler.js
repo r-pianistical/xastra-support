@@ -73,7 +73,7 @@ async function handleTicketButtonClick(interaction, serverKey, categoryId) {
   const category = serverConfig?.categories.find((c) => c.id === categoryId);
 
   if (!serverConfig || !category) {
-    return interaction.reply({ content: '❌ Unknown ticket category.', ephemeral: true });
+    return interaction.reply({ content: '❌ Unknown ticket category.', flags: ['Ephemeral'] });
   }
 
   await interaction.showModal(buildModal(serverKey, category));
@@ -91,10 +91,10 @@ async function handleTicketModalSubmit(interaction, serverKey, categoryId) {
   const category = serverConfig?.categories.find((c) => c.id === categoryId);
 
   if (!serverConfig || !category) {
-    return interaction.reply({ content: '❌ Unknown ticket category.', ephemeral: true });
+    return interaction.reply({ content: '❌ Unknown ticket category.', flags: ['Ephemeral'] });
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ['Ephemeral'] });
 
   const guild = interaction.guild;
   const user = interaction.user;
@@ -102,10 +102,11 @@ async function handleTicketModalSubmit(interaction, serverKey, categoryId) {
   // ── Permission overwrites ─────────────────────────────────────────────────
   const overwrites = [
     // Hide channel from everyone by default
-    { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+    { id: guild.roles.everyone.id, type: 'role', deny: [PermissionFlagsBits.ViewChannel] },
     // Grant access to the ticket opener
     {
       id: user.id,
+      type: 'user',
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -119,6 +120,7 @@ async function handleTicketModalSubmit(interaction, serverKey, categoryId) {
   if (serverConfig.generalSupportRoleId) {
     overwrites.push({
       id: serverConfig.generalSupportRoleId,
+      type: 'role',
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -132,6 +134,7 @@ async function handleTicketModalSubmit(interaction, serverKey, categoryId) {
   if (category.supportRoleId) {
     overwrites.push({
       id: category.supportRoleId,
+      type: 'role',
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -145,6 +148,7 @@ async function handleTicketModalSubmit(interaction, serverKey, categoryId) {
   if (serverConfig.supportRoleId) {
     overwrites.push({
       id: serverConfig.supportRoleId,
+      type: 'role',
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -223,7 +227,7 @@ async function handleCloseTicket(interaction, channelId) {
   const ticket = getTicket(channelId);
 
   if (!ticket) {
-    return interaction.reply({ content: '❌ This ticket was not found in the database.', ephemeral: true });
+    return interaction.reply({ content: '❌ This ticket was not found in the database.', flags: ['Ephemeral'] });
   }
 
   // Acknowledge immediately so we can delete the channel

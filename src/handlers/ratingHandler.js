@@ -54,7 +54,7 @@ async function handleRatingSubmit(interaction, ticketChannelId, stars) {
   if (isTicketRated(ticketChannelId)) {
     return interaction.reply({
       content: '❌ You have already submitted a rating for this ticket.',
-      ephemeral: true,
+      flags: ['Ephemeral'],
     });
   }
 
